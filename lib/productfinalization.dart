@@ -1,17 +1,248 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:artistry_app/payment.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:artistry_app/orderConfirmation.dart';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class ProductConfirm extends StatelessWidget {
+class ProductConfirm extends StatefulWidget {
   ProductConfirm({super.key});
-  final List<Map<String, dynamic>> proDetail = [
-    {'image': 'images/catPaintings/paint1.jpg', 'name': ' "Her Eyes" ', 'price': '\$4,000', 'artist': 'Simon'},
-    {'image': 'images/catPhotography/pho1.jpg', 'name': ' "Scooter" ', 'price': '\$110', 'artist': 'Cade'}
-  ];
+
+  @override
+  State<ProductConfirm> createState() => _ProductConfirmState();
+}
+
+class _ProductConfirmState extends State<ProductConfirm> {
+  List<dynamic> cartDetail = [];
+  Map<String, dynamic> addressDetails = {};
+  bool isLoading = true;
+  late Razorpay _razorpay;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCart();
+    fetchAddress();
+    
+    // Initialize Razorpay
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
+  }
+
+  Future<void> fetchCart() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+
+    if (token == null) {
+      print("Token not received");
+      return;
+    }
+    try {
+      var url = Uri.parse("http://192.168.67.52:3000/cart/getfromCart");
+      final header = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token"
+      };
+      final response = await http.get(url, headers: header);
+      if (response.statusCode == 200) {
+        print("Response Body : ${response.body}");
+        var jsonResponse = json.decode(response.body);
+
+        if (jsonResponse is Map<String, dynamic> && jsonResponse.containsKey('cart')) {
+          setState(() {
+            cartDetail = jsonResponse['cart'];
+            isLoading = false;
+          });
+        }
+      } else {
+        throw Exception('Failed to load products');
+      }
+    } catch (e) {
+      print("Error Occurred : $e");
+    }
+  }
+
+  Future<void> fetchAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+
+    if (token == null) {
+      print("No token found address part");
+      return;
+    }
+    try {
+      var url = Uri.parse("http://192.168.67.52:3000/checkout/getAddress");
+      final header = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token"
+      };
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        var jsonResponse = json.decode(response.body);
+
+        if (jsonResponse is Map<String, dynamic> && jsonResponse.containsKey('address')) {
+          setState(() {
+            addressDetails = jsonResponse['address'];
+          });
+        }
+      }
+    } catch (e) {
+      print("Error Occurred address part:$e");
+    }
+  }
+
+
+ Future<void> createOrder() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? token = prefs.getString('token');
+
+  if (token == null) {
+    print("No token received");
+    return;
+  }
+
+  try {
+    List<Map<String, dynamic>> products = cartDetail.map((item) => {
+      "productId": item['productId'],
+      "quantity": 1,
+    }).toList();
+    String addressId = addressDetails['_id'];
+    var url = Uri.parse("http://192.168.67.52:3000/order/createOrder");
+    final header = {
+      "Authorization": "Bearer $token",
+      "Content-Type": "application/json",
+    };
+    final body = jsonEncode({
+      "products": products,
+      "addressId": addressId,
+    });
+
+    final response = await http.post(url, headers: header, body: body);
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      String razorPayOrderId = jsonResponse['razorpayOrderId'];
+      int amount = jsonResponse['amount'];
+      openCheckout(razorPayOrderId, amount);
+    } else {
+      throw Exception('Failed to create order: ${response.body}');
+    }
+  } catch (e) {
+    print("Error Occurred while creating order: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to create order. Please try again.")),
+    );
+  }
+}
+
+
+  // Razorpay payment functions
+void openCheckout(String orderId, int amount) {
+  var options = {
+    'key': 'rzp_test_3MJ0cPqPZC9AWJ', // Replace with your Razorpay API Key
+    'amount': amount, // Amount in paise from backend
+    'currency': 'INR',
+    'name': 'Artistry App',
+    'description': 'Payment for Order',
+    'order_id': orderId, // Razorpay order ID
+    'prefill': {
+      'contact': addressDetails['phone'] ?? '9876543210',
+      'email': addressDetails['email'] ?? 'customer@example.com',
+    },
+    'theme': {'color': '#3399cc'},
+  };
+
+  try {
+    _razorpay.open(options);
+  } catch (e) {
+    print("Error: $e");
+  }
+}
+
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+  print("Payment Successful: ${response.paymentId}");
   
-  final List<Map<String, dynamic>> personAdd = [
-    {'name': 'Augnes Rose', 'phone': '9778217946', 'address': 'Srambickal ', 'pincode': '688008', 'locality': 'Kommady', 'district': 'Alappuzha', 'state': 'Kerala'},
-  ];
+  // Verify payment on the backend
+  verifyPayment(
+    response.orderId ?? "",
+    response.paymentId ?? "",
+    response.signature ?? ""
+  );
+}
+
+Future<void> verifyPayment(String razorpayOrderId, String razorpayPaymentId, String razorpaySignature) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? token = prefs.getString('token');
+  
+  if (token == null) {
+    print("No token found");
+    return;
+  }
+  
+  try {
+    var url = Uri.parse("http://192.168.67.52:3000/order/verifyPayment");
+    final header = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+    
+    final body = jsonEncode({
+      "razorpayOrderId": razorpayOrderId,
+      "razorpayPaymentId": razorpayPaymentId,
+      "razorpaySignature": razorpaySignature
+    });
+    
+    final response = await http.post(url, headers: header, body: body);
+    
+    if (response.statusCode == 200) {
+      // Payment verified successfully
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text("Payment verified successfully!")),
+      // );
+      
+      // Navigate to order success page
+     //Navigator.pushReplacementNamed(context, '/OrderConfirmationScreen');
+    Navigator.push(context, MaterialPageRoute(builder: (context) => OrderConfirmationScreen(orderId: razorpayOrderId)));
+    } else if (response.statusCode == 400) {
+      // Payment verification failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Payment verification failed. Please try again.")),
+      );
+    } else {
+      throw Exception('Failed to verify payment: ${response.body}');
+    }
+  } catch (e) {
+    print("Error verifying payment: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Payment verification failed. Please contact support.")),
+    );
+  }
+}
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    print("Payment Error: ${response.code} - ${response.message}");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Payment Failed! Try again.")),
+    );
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    print("External Wallet Used: ${response.walletName}");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("External Wallet: ${response.walletName}")),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +276,7 @@ class ProductConfirm extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.all(16.w),
             child: TextButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => Payment()));
-              },
+              onPressed: createOrder, // Direct call to open Razorpay
               style: TextButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
@@ -65,29 +294,45 @@ class ProductConfirm extends StatelessWidget {
               ),
             ),
           ),
-
-          
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildProductCard(),
-                SizedBox(height: 20.h),
-                _buildDeliveryAddressCard(),
-                SizedBox(height: 20.h),
-                _buildPriceDetailsCard(),
-              ],
-            ),
-          ),
-        ),
+        body: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildProductList(),
+                      SizedBox(height: 20.h),
+                      _buildDeliveryAddressCard(),
+                      SizedBox(height: 20.h),
+                      _buildPriceDetailsCard(),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
 
-  Widget _buildProductCard() {
+  Widget _buildProductList() {
+    if (cartDetail.isEmpty) {
+      return Center(
+        child: Text("No products in the cart", style: TextStyle(fontSize: 16.sp)),
+      );
+    }
+
+    return Column(
+      children: List.generate(
+        cartDetail.length,
+        (index) => _buildProductCard(index),
+      ),
+    );
+  }
+
+  Widget _buildProductCard(int index) {
+    var item = cartDetail[index];
     return Container(
       decoration: _buildCardDecoration(),
       child: Padding(
@@ -96,11 +341,20 @@ class ProductConfirm extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.asset(
-                proDetail[0]['image'],
+              child: Image.network(
+                "http://192.168.67.52:3000/uploads/${item['image']}" ??
+                    'https://placeholder.com/100',
                 width: 100.h,
                 height: 100.h,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 100.h,
+                    height: 100.h,
+                    color: Colors.grey[300],
+                    child: Icon(Icons.image_not_supported, color: Colors.grey[500]),
+                  );
+                },
               ),
             ),
             SizedBox(width: 16.w),
@@ -109,7 +363,7 @@ class ProductConfirm extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    proDetail[0]['name'],
+                    item['productName'] ?? 'Unknown Product',
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w600,
@@ -117,7 +371,7 @@ class ProductConfirm extends StatelessWidget {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    'Artist: ${proDetail[0]['artist']}',
+                    'Artist: ${item['artistName'] ?? 'Unknown'}',
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: Colors.grey[700],
@@ -125,7 +379,7 @@ class ProductConfirm extends StatelessWidget {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    'Price: ${proDetail[0]['price']}',
+                    'Price: \u20B9 ${item['price'] ?? '0'}',
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w500,
@@ -142,6 +396,15 @@ class ProductConfirm extends StatelessWidget {
   }
 
   Widget _buildDeliveryAddressCard() {
+    if (addressDetails.isEmpty) {
+      return Container(
+          decoration: _buildCardDecoration(),
+          padding: EdgeInsets.all(16.w),
+          child: Center(
+            child: Text("No address information available",
+                style: TextStyle(fontSize: 16.sp)),
+          ));
+    }
     return Container(
       decoration: _buildCardDecoration(),
       child: Padding(
@@ -153,7 +416,7 @@ class ProductConfirm extends StatelessWidget {
               children: [
                 Icon(
                   Icons.location_on,
-                  color: Color.fromARGB(255, 212, 85, 108),
+                  color: Colors.black,
                 ),
                 SizedBox(width: 8.w),
                 Text(
@@ -161,7 +424,7 @@ class ProductConfirm extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
-                    color: Color.fromARGB(255, 212, 85, 108),
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -173,7 +436,7 @@ class ProductConfirm extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    personAdd[0]['name'],
+                    addressDetails['name'] ?? 'No Name',
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
@@ -181,12 +444,12 @@ class ProductConfirm extends StatelessWidget {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    personAdd[0]['phone'],
+                    addressDetails['phone'] ?? 'No phone',
                     style: TextStyle(fontSize: 15.sp),
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    '${personAdd[0]['address']}, ${personAdd[0]['locality']},\n${personAdd[0]['district']}, ${personAdd[0]['state']}\nPIN: ${personAdd[0]['pincode']}',
+                    '${addressDetails['houseName'] ?? ''}, ${addressDetails['locality'] ?? ' '},\n${addressDetails['district'] ?? ""}, ${addressDetails['state'] ?? ''}\nPIN: ${addressDetails['pinCode'] ?? ''}',
                     style: TextStyle(
                       fontSize: 15.sp,
                       height: 1.5,
@@ -203,6 +466,8 @@ class ProductConfirm extends StatelessWidget {
   }
 
   Widget _buildPriceDetailsCard() {
+    if (cartDetail.isEmpty) return SizedBox();
+
     return Container(
       decoration: _buildCardDecoration(),
       child: Padding(
@@ -219,17 +484,24 @@ class ProductConfirm extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16.h),
-            _buildPriceRow('Total Quantity', '2'),
-            _buildPriceRow('Shipping Charge', 'Free', isHighlighted: true),
-            Divider(height: 24.h),
-            _buildPriceRow('Total Amount', '\$4,110', isBold: true),
+            _buildPriceRow('Total Quantity : ', '${cartDetail.length}'),
+            _buildPriceRow('Subtotal : ', '\u20B9${calculateSubtotal().toStringAsFixed(2)}'),
+            _buildPriceRow('Shipping Charge : ',
+                '\u20B9 ${calculateShippingCharge().toStringAsFixed(2)}',
+                isHighlighted: true),
+            Divider(
+              height: 24.h,
+              thickness: 1,
+            ),
+            _buildPriceRow('Amount Payable ',
+                '\u20B9${grandTotal().toStringAsFixed(2)}', isBold: true),
             SizedBox(height: 12.h),
             Row(
               children: [
                 Icon(Icons.local_shipping_outlined, size: 18.sp),
                 SizedBox(width: 8.w),
                 Text(
-                  'Delivery by 17th January 2024',
+                  'Estimated delivery in 20-30 business days',
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: Colors.grey[700],
@@ -243,7 +515,8 @@ class ProductConfirm extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceRow(String label, String value, {bool isHighlighted = false, bool isBold = false}) {
+  Widget _buildPriceRow(String label, String value,
+      {bool isHighlighted = false, bool isBold = false}) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
@@ -282,5 +555,26 @@ class ProductConfirm extends StatelessWidget {
         )
       ],
     );
+  }
+
+  // Price calculation methods (from _buildPriceDetailsCard)
+  double calculateSubtotal() {
+    double total = 0;
+    for (var item in cartDetail) {
+      total += double.parse(item['price'].toString());
+    }
+    return total;
+  }
+
+  double calculateShippingCharge() {
+    double total = 0;
+    for (var item in cartDetail) {
+      total += double.parse(item['shippingFee'].toString());
+    }
+    return total;
+  }
+
+  double grandTotal() {
+    return calculateSubtotal() + calculateShippingCharge();
   }
 }

@@ -13,12 +13,12 @@ class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   final List<Map<String, dynamic>> categories = [
-    {'image': 'images/circularcarousel/cc1.jpg', 'name': 'Paintings', 'page': Paintings()},
-    {'image': 'images/circularcarousel/cc2.jpg', 'name': 'Photography', 'page': Photography()},
-    {'image': 'images/circularcarousel/cc3.jpg', 'name': 'Sculpture', 'page': Sculpture()},
-    {'image': 'images/circularcarousel/cc4.jpg', 'name': 'Collage', 'page': Collage()},
-    {'image': 'images/circularcarousel/cc5.jpg', 'name': 'Digital Art', 'page': DigitalArt()},
-    {'image': 'images/circularcarousel/cc6.jpg', 'name': 'Abstract', 'page': AbstractArt()},
+    {'image': 'images/circularcarousel/cc1.jpg', 'name': 'Paintings', 'page': Paintings('Paintings')},
+    {'image': 'images/circularcarousel/cc2.jpg', 'name': 'Photography', 'page': Paintings('Photography')},
+    {'image': 'images/circularcarousel/cc3.jpg', 'name': 'Sculpture', 'page': Paintings('Sculpture')},
+    {'image': 'images/circularcarousel/cc4.jpg', 'name': 'Collage', 'page': Paintings('Collage')},
+    {'image': 'images/circularcarousel/cc5.jpg', 'name': 'Digital Art', 'page': Paintings('Digital Art')},
+    {'image': 'images/circularcarousel/cc6.jpg', 'name': 'Abstract', 'page': Paintings('Abstract')},
 
   ];
 

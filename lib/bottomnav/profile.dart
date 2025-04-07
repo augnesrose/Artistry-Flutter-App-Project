@@ -8,6 +8,7 @@ import 'package:artistry_app/myOrders.dart';
 import 'package:artistry_app/get_started.dart';
 import 'dart:io';
 import 'package:artistry_app/editProfile.dart';
+import 'package:artistry_app/myWishlist.dart';
 
 
 class Profile extends StatefulWidget {
@@ -140,6 +141,20 @@ class _ProfileState extends State<Profile> {
                         ),
                         Divider(),
                         ListTile(
+                          leading:Icon(Icons.favorite,size: 16) ,
+                          title:Text('My Wishlist',
+                          style:TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight:FontWeight.w500,
+                          ),
+                          ),
+                          trailing:Icon(Icons.arrow_forward_ios),
+                          onTap:(){
+                            Navigator.push(context,MaterialPageRoute(builder:(context)=>Mywishlist()),);
+                          }
+                        ),
+                        Divider(),
+                        ListTile(
                           leading: Icon(Icons.edit,size: 16,),
                           title:Text('Edit profile',
                           style: TextStyle(
@@ -153,6 +168,7 @@ class _ProfileState extends State<Profile> {
                           },
                         ),
                         Divider(),
+                        
                         ListTile(
                           leading: Icon(Icons.delete_forever,size: 16,),
                           title:Text('Remove Account',

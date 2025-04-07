@@ -13,14 +13,14 @@ class Categories extends StatelessWidget {
   Categories({super.key});
 
   final List<Map<String, dynamic>> categories = [
-    {'image': 'images/category/cat3.jpg', 'name': 'Paintings', 'page': Paintings()},
-    {'image': 'images/category/cat1.jpg', 'name': 'Photography', 'page': Photography()},
-    {'image': 'images/category/cat2.jpg', 'name': 'Sculpture', 'page': Sculpture()},
-    {'image': 'images/category/cat5.jpg', 'name': 'Collage', 'page': Collage()},
-    {'image': 'images/category/cat4.jpg', 'name': 'Digital Art', 'page': DigitalArt()},
-    {'image': 'images/category/cat8.jpg', 'name': 'Abstract', 'page': AbstractArt()},
-    {'image': 'images/category/cat7.jpg', 'name': 'Posters', 'page': Posters()},
-    {'image': 'images/category/cat6.jpg', 'name': 'Sketches', 'page': Sketches()},
+    {'image': 'images/category/cat3.jpg', 'name': 'Paintings', 'page': Paintings('Paintings')},
+    {'image': 'images/category/cat1.jpg', 'name': 'Photography', 'page': Paintings('Photography')},
+    {'image': 'images/category/cat2.jpg', 'name': 'Sculpture', 'page': Paintings('Sculpture')},
+    {'image': 'images/category/cat5.jpg', 'name': 'Collage', 'page': Paintings('Collage')},
+    {'image': 'images/category/cat4.jpg', 'name': 'Digital Art', 'page': Paintings('Digital Art')},
+    {'image': 'images/category/cat8.jpg', 'name': 'Abstract', 'page': Paintings('Abstract')},
+    {'image': 'images/category/cat7.jpg', 'name': 'Posters', 'page': Paintings('Poster')},
+    {'image': 'images/category/cat6.jpg', 'name': 'Sketches', 'page': Paintings('Sketches')},
     
   ];
 
