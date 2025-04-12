@@ -33,7 +33,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> with 
 
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () {
+    Timer(const Duration(seconds: 5), () {
       Navigator.push(context, MaterialPageRoute(
         builder: (context) => Orders()
       ));
@@ -113,7 +113,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> with 
               
               
               Text(
-                "Redirecting to home page...",
+                "Redirecting to Orders page...",
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],

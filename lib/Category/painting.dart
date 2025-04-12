@@ -21,12 +21,18 @@ class _PaintingsState extends State<Paintings> {
  List<dynamic> products=[];
  List<dynamic> wishlistDetails=[];
  bool isLoading=true;
-
+ Timer? _refreshTimer;
+ final int refreshInterval = 20; // Refresh every 5 seconds
+  
  @override
 
  void initState(){
   super.initState();
   fetchProducts();
+
+  _refreshTimer = Timer.periodic(Duration(seconds: refreshInterval), (timer) {
+    fetchProducts();
+  });
  }
  Future<void> fetchProducts() async {
   try {
@@ -37,7 +43,6 @@ class _PaintingsState extends State<Paintings> {
       print("Response Body: ${response.body}");
       var jsonResponse = json.decode(response.body);
 
-      // Update this condition to check for 'products' instead of 'data'
       if (jsonResponse is Map<String, dynamic> && jsonResponse.containsKey('products')) {
         setState(() {
           products = jsonResponse['products'];
@@ -81,10 +86,108 @@ class _PaintingsState extends State<Paintings> {
                 itemBuilder: (context, index) {
   var product = products[index];
 
-  // Provide a default value of 'false' if 'isWishlisted' is null
-  bool isWishlisted = product['isWishlisted'] ?? false;
+  
+  //bool isWishlisted = product['isWishlisted'] ?? false;
 
-  return GestureDetector(
+  bool isAvailable = (product['quantity']??0)>0;
+
+  Widget productCard=Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(8.r),
+      color: Colors.white,
+      border: Border.all(
+        color: Colors.grey.withOpacity(0.2),
+        width: 1,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 4,
+          offset: Offset(0, 2),
+        ),
+      ],
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(8.r),
+      child: Column(
+        children: [
+          Expanded(
+            flex: 5,
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.grey.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Image.network(
+                    "http://192.168.67.52:3000/uploads/${product['productImage']}",
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                  ),
+                ),
+
+                if(!isAvailable)
+                Container(
+                  width:double.infinity,
+                  height:double.infinity,
+                  color: Colors.black.withOpacity(0.5),
+                  child:Center(
+                    child:Container(
+                      padding:EdgeInsets.symmetric(horizontal:12.w,vertical:6.h),
+                      decoration:BoxDecoration(
+                        color:Colors.red,
+                        borderRadius:BorderRadius.circular(4.r),
+                      ),
+                      child:Text(
+                        'SOLD OUT',
+                        style: TextStyle(
+                          color:Colors.white,
+                          fontWeight:FontWeight.bold,
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              children: [
+                Text(
+                  product['name'],
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color:isAvailable ? Colors.black:Colors.grey,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                
+                SizedBox(height: 4.h),
+                Text(
+                  '\u20B9${product['price'].toString()}',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: isAvailable ?Colors.black: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+  return isAvailable ? GestureDetector(
     onTap: () {
       Navigator.push(
         context,
@@ -93,74 +196,9 @@ class _PaintingsState extends State<Paintings> {
         ),
       );
     },
-    child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.r),
-        color: Colors.white,
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8.r),
-        child: Column(
-          children: [
-            Expanded(
-              flex: 5,
-              child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.grey.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: Image.network(
-                      "http://192.168.67.52:3000/uploads/${product['productImage']}",
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                children: [
-                  Text(
-                    product['name'],
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    product['price'].toString(),
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.grey[800],
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
+    child: productCard,
+  ) : Container(
+    child: productCard,
   );
 },
 
