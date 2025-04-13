@@ -390,32 +390,56 @@ class _OrderStatusPageState extends State<OrderStatusPage> with TickerProviderSt
                           
                           
                           if (currentStatus != "Cancelled" && currentStatus != "Shipped")
-                            Center(
-                              child: SizedBox(
-                                width: 200.w,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    _showCancelDialog(context);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.red,
-                                    side: BorderSide(color: Colors.red),
-                                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.r),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    "Cancel Order",
-                                    style: TextStyle(
-                                      fontSize: 16.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+  Center(
+    child: orderDetails['cancellation'] == true
+      ? SizedBox(
+          width: 200.w,
+          child: ElevatedButton(
+            onPressed: null, // Disabled
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[300],
+              foregroundColor: Colors.grey[600],
+              disabledForegroundColor: Colors.grey[600],
+              disabledBackgroundColor: Colors.grey[300],
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            child: Text(
+              "Cancellation Requested",
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        )
+      : SizedBox(
+          width: 200.w,
+          child: ElevatedButton(
+            onPressed: () {
+              _showCancelDialog(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.red,
+              side: BorderSide(color: Colors.red),
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            child: Text(
+              "Cancel Order",
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+  ),
                         ],
                       ),
                     ),
@@ -458,7 +482,7 @@ class _OrderStatusPageState extends State<OrderStatusPage> with TickerProviderSt
           additionalDays = 3;
           break;
         case "Shipped":
-          additionalDays = 1;
+          additionalDays = 10;
           break;
       }
       
@@ -554,7 +578,127 @@ class _OrderStatusPageState extends State<OrderStatusPage> with TickerProviderSt
         ),
       );
     }
-    
+    //Order status timeline
+
+
+    if (orderDetails['cancellation'] == true && currentStatus != "Cancelled") {
+    return Column(
+      children: [
+        Column(
+          children : List.generate(statuses.length,(index){
+            bool isCompleted = index <= currentIndex;
+            bool isCurrent = index == currentIndex;
+            
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 30.w,
+                      height: 30.w,
+                      decoration: BoxDecoration(
+                        color: isCompleted ? Colors.black : Colors.grey[300],
+                        shape: BoxShape.circle,
+                      ),
+                      child: isCompleted
+                          ? Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 18.sp,
+                            )
+                          : null,
+                    ),
+                    SizedBox(width: 12.w),
+                    
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Order ${statuses[index]}",
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                            color: isCompleted ? Colors.black : Colors.grey[600],
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          getStatusDescription(statuses[index]),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: isCompleted ? Colors.black87 : Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                
+                if (index < statuses.length - 1)
+                  Container(
+              
+                    margin: EdgeInsets.only(left: 15.w),
+                    height: 30.h,
+                    width:  1.w,
+                    color: isCompleted ?  Colors.black:Colors.grey[300], 
+                        
+                  ),
+              ],
+            );
+          })
+        ),
+
+        SizedBox(height: 16.h),
+        Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: Colors.red[50],
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.red[200]!),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 30.w,
+                height: 30.w,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.pending_actions,
+                  color: Colors.white,
+                  size: 18.sp,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Cancellation Requested",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange[800],
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    "Your request is being processed",
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.orange[700],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ]
+    );
+    }
     return Column(
       children: List.generate(statuses.length, (index) {
         bool isCompleted = index <= currentIndex;
@@ -692,8 +836,11 @@ class _OrderStatusPageState extends State<OrderStatusPage> with TickerProviderSt
   }
   
   Future<void> _cancelOrder() async {
+    print("Cancelling order with ID: ${orderDetails['_id']}");
     try {
+      
       final url = Uri.parse("http://192.168.67.52:3000/order/cancelOrder/${orderDetails['_id']}");
+
       final response = await http.put(
         url,
         headers: {"Content-Type": "application/json"},
@@ -702,14 +849,14 @@ class _OrderStatusPageState extends State<OrderStatusPage> with TickerProviderSt
       if (response.statusCode == 200) {
         
         setState(() {
-          currentStatus = "Cancelled";
+          orderDetails['cancellation'] = true;
         });
         
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Your order has been cancelled"),
-            backgroundColor: Colors.red[700],
+            content: Text("Cancellation request submitted"),
+            backgroundColor: Colors.orange[700],
           ),
         );
         
