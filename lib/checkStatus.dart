@@ -1,3 +1,4 @@
+import 'package:artistry_app/myOrders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
@@ -124,7 +125,7 @@ class _OrderStatusPageState extends State<OrderStatusPage> with TickerProviderSt
               SnackBar(
                 content: Text("Order status updated to: $newStatus"),
                 backgroundColor: Colors.green,
-                duration: Duration(seconds: 3),
+                duration: Duration(seconds:2),
               ),
             );
           }
@@ -163,8 +164,8 @@ class _OrderStatusPageState extends State<OrderStatusPage> with TickerProviderSt
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        navigatetoHome();
-        return false;
+        return true;
+        
       },
       child: Scaffold(
         appBar: AppBar(
@@ -187,7 +188,9 @@ class _OrderStatusPageState extends State<OrderStatusPage> with TickerProviderSt
           ],
           leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => navigatetoHome(),
+          onPressed: () => {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => Orders())),
+          },
         ),
         ),
         body: isLoading 

@@ -9,6 +9,9 @@ import 'package:artistry_app/get_started.dart';
 import 'dart:io';
 import 'package:artistry_app/editProfile.dart';
 import 'package:artistry_app/myWishlist.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 
 class Profile extends StatefulWidget {
@@ -21,6 +24,7 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   Uint8List? _image;
   File? selectedImage;
+  Map<String, dynamic>? userData={};
 
   Future<void> pickImageFromGallery() async {
     final picker = ImagePicker();
@@ -44,6 +48,35 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  Future<void> fetchName() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    if (token == null) {
+      print("Token not received");
+      return;
+    }
+    try{
+      final url = Uri.parse("http://192.168.67.52:3000/user/getUserDetails");
+      final header={
+        "Authorization":"Bearer $token",
+        "Content-Type":"application/json",
+      };
+      final response = await http.get(url,headers: header);
+      final responseData = json.decode(response.body);
+      if(response.statusCode==200){
+        userData=responseData['userDetails'];
+        print(userData);
+      }
+    }
+    catch(e){
+      print('Error fetching name: $e');
+    }
+  }
+  @override
+  void initState(){
+    super.initState();
+    fetchName();
+  }
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context);
@@ -92,7 +125,7 @@ class _ProfileState extends State<Profile> {
                     ),
                     SizedBox(width: 3.h),
                     Text(
-                      'Augnes !',
+                      userData!['name'] != null ? userData!['name'] : 'User',
                       style: TextStyle(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w400,
@@ -153,20 +186,20 @@ class _ProfileState extends State<Profile> {
                             Navigator.push(context,MaterialPageRoute(builder:(context)=>Mywishlist()),);
                           }
                         ),
-                        Divider(),
-                        ListTile(
-                          leading: Icon(Icons.edit,size: 16,),
-                          title:Text('Edit profile',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          ),
-                          trailing: Icon(Icons.arrow_forward_ios),
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) =>  EditProfile()),);
-                          },
-                        ),
+                        // Divider(),
+                        // ListTile(
+                        //   leading: Icon(Icons.edit,size: 16,),
+                        //   title:Text('Edit profile',
+                        //   style: TextStyle(
+                        //     fontSize: 16.sp,
+                        //     fontWeight: FontWeight.w500,
+                        //   ),
+                        //   ),
+                        //   trailing: Icon(Icons.arrow_forward_ios),
+                        //   onTap: () {
+                        //     Navigator.push(context, MaterialPageRoute(builder: (context) =>  EditProfile()),);
+                        //   },
+                        // ),
                         Divider(),
                         
                         ListTile(
@@ -183,19 +216,16 @@ class _ProfileState extends State<Profile> {
                           },
                         ),
                         Divider(),
-                        ListTile(
-                          leading: Icon(Icons.logout,size: 16,),
-                          title:Text('Log out',
-                          style: TextStyle(
-                            fontSize: 16.sp,
+                       ListTile(
+                            leading: Icon(Icons.logout),
+                            title: Text('Logout',
+                            style: TextStyle(
+                              fontSize: 16.sp,
                             fontWeight: FontWeight.w500,
+                            ),),
+                            trailing: Icon(Icons.arrow_forward_ios),
+                             onTap: () => _showLogoutConfirmation(context),
                           ),
-                          ),
-                          trailing: Icon(Icons.arrow_forward_ios),
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) =>  Login()),);
-                          },
-                        ),
                         Divider(),
                       ],
                     ),
@@ -252,4 +282,33 @@ class _ProfileState extends State<Profile> {
       },
     );
   }
+  void _showLogoutConfirmation(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Confirm Logout'),
+      content: Text('Are you sure you want to log out?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(), // Cancel
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            // Remove token
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.remove('token');
+            Navigator.of(context).pop(); // Close dialog
+            // Navigate to Login and remove all previous routes
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => Login()),
+              (route) => false,
+            );
+          },
+          child: Text('Logout'),
+        ),
+      ],
+    ),
+  );
+}
 }

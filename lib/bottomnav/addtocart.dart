@@ -193,13 +193,13 @@ class _AddToCartState extends State<AddToCart> {
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(SnackBar(
                                                       content: Text(
-                                                          "Item removed from the cart successfully")));
+                                                          "Item removed from the cart successfully"),duration:Duration(seconds: 1),),);
                                               await fetchProducts();
                                             } else {
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(SnackBar(
                                                       content: Text(
-                                                          "Failed to remove item from the cart")));
+                                                          "Failed to remove item from the cart"),duration:Duration(seconds: 1)));
                                             }
                                           },
                                           child: Text('Remove',
@@ -266,95 +266,100 @@ class _AddToCartState extends State<AddToCart> {
     );
   }
 
-  Widget _buildPriceDetails() {
-    if (cartDetail.isEmpty) return SizedBox();
+ Widget _buildPriceDetails() {
+  if (cartDetail.isEmpty) return SizedBox();
 
-    double calculateSubtotal() {
-      double total = 0;
-      for (var item in cartDetail) {
-        total += double.parse(item['price'].toString());
-      }
-      return total;
+  double calculateSubtotal() {
+    double total = 0;
+    for (var item in cartDetail) {
+      // Use tryParse and provide a default value if parsing fails
+      double? price = double.tryParse(item['price']?.toString() ?? '0');
+      total += price ?? 0; // Use 0 if price is null
     }
-
-    double calculateShippingCharge() {
-      double shippingCharge = 0;
-      for (var item in cartDetail) {
-        shippingCharge += double.parse(item['shippingFee'].toString());
-      }
-      return shippingCharge;
-    }
-
-    double calculateGrandTotal() {
-      return calculateSubtotal() + calculateShippingCharge();
-    }
-
-    return Card(
-      elevation: 2,
-      margin: EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Price Details',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Total Items:', style: TextStyle(fontSize: 14.sp)),
-                Text('${cartDetail.length}',
-                    style: TextStyle(fontSize: 14.sp)),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Subtotal:', style: TextStyle(fontSize: 14.sp)),
-                Text(
-                  '\u20B9${calculateSubtotal().toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Shipping Fee:', style: TextStyle(fontSize: 14.sp)),
-                Text(
-                  '\u20B9${calculateShippingCharge().toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            Divider(height: 24.h, thickness: 1),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Amount Payable:',
-                  style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '\u20B9${calculateGrandTotal().toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    return total;
   }
+
+  double calculateShippingCharge() {
+    double shippingCharge = 0;
+    for (var item in cartDetail) {
+      // Use tryParse and provide a default value if parsing fails
+      double? shippingFee = double.tryParse(item['shippingFee']?.toString() ?? '0');
+      shippingCharge += shippingFee ?? 0; // Use 0 if shippingFee is null
+    }
+    return shippingCharge;
+  }
+
+  double calculateGrandTotal() {
+    return calculateSubtotal() + calculateShippingCharge();
+  }
+
+  return Card(
+    elevation: 2,
+    margin: EdgeInsets.all(16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Price Details',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total Items:', style: TextStyle(fontSize: 14.sp)),
+              Text('${cartDetail.length}',
+                  style: TextStyle(fontSize: 14.sp)),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Subtotal:', style: TextStyle(fontSize: 14.sp)),
+              Text(
+                '\u20B9${calculateSubtotal().toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Shipping Fee:', style: TextStyle(fontSize: 14.sp)),
+              Text(
+                '\u20B9${calculateShippingCharge().toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          Divider(height: 24.h, thickness: 1),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Amount Payable:',
+                style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '\u20B9${calculateGrandTotal().toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 }

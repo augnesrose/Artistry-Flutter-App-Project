@@ -21,51 +21,48 @@ class _PlaceOrderState extends State<PlaceOrder> {
   final _districtController = TextEditingController();
   final _stateController = TextEditingController();
 
-  Future<void> addAddress() async{
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String ? token = prefs.getString('token');
+  final _formKey = GlobalKey<FormState>();
 
-    if(token == null){
+  Future<void> addAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+
+    if (token == null) {
       print("No token found");
       return;
     }
-  //    print("Name: '${_nameController.text}'");
-  // print("Phone: '${_mobileController.text}'");
-  // print("PinCode: '${_pincodeController.text}'");
-  // print("HouseName: '${_housenameController.text}'");
-  // print("Locality: '${_localityController.text}'");
-  // print("District: '${_districtController.text}'");
-  // print("State: '${_stateController.text}'");
-    try{
+
+    try {
       final url = Uri.parse("http://192.168.67.52:3000/checkout/addAddress");
-      final headers ={
-        "Content-Type":"application/json",
-        "Authorization":"Bearer $token"
+      final headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token"
       };
       final body = json.encode({
-        'name':_nameController.text,
-        'phone':_mobileController.text,
-        'pinCode':_pincodeController.text,
-        'houseName':_housenameController.text,
-        'locality':_localityController.text,
-        'district':_districtController.text,
-        'state':_stateController.text,
+        'name': _nameController.text.trim(),
+        'phone': _mobileController.text.trim(),
+        'pinCode': _pincodeController.text.trim(),
+        'houseName': _housenameController.text.trim(),
+        'locality': _localityController.text.trim(),
+        'district': _districtController.text.trim(),
+        'state': _stateController.text.trim(),
       });
       print("Request body being sent: $body");
-      final response = await http.post(url,headers : headers,body:body);
-      if(response.statusCode == 200){
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Address added successfully !")));
-        Navigator.push(context, MaterialPageRoute(builder: (context) => ProductConfirm()));  
+      final response = await http.post(url, headers: headers, body: body);
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Address added successfully!"),duration:Duration(seconds: 1)));
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ProductConfirm()));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Failed to add address: ${response.body}"),duration:Duration(seconds: 1)));
       }
-      else{
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to add address :${response.body}")));
-      }
-      }
-      catch(err){
-        print("Error Occured : $err");
-      }
-
+    } catch (err) {
+      print("Error Occurred: $err");
+    }
   }
+
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context);
@@ -74,21 +71,12 @@ class _PlaceOrderState extends State<PlaceOrder> {
         appBar: AppBar(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
-          title: Row(
-            children: [
-              Text('ADDRESS',style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w500
-              ),
-              ),
-              SizedBox(
-                width: 15.w,
-              ),
-              
-            ],
+          title: Text(
+            'ADDRESS',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
           ),
         ),
-         bottomNavigationBar: Container(
+        bottomNavigationBar: Container(
           decoration: BoxDecoration(
             color: Colors.black,
             boxShadow: [
@@ -103,7 +91,9 @@ class _PlaceOrderState extends State<PlaceOrder> {
             padding: EdgeInsets.all(16.w),
             child: TextButton(
               onPressed: () {
+                if (_formKey.currentState!.validate()) {
                   addAddress();
+                }
               },
               style: TextButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -123,263 +113,170 @@ class _PlaceOrderState extends State<PlaceOrder> {
             ),
           ),
         ),
-
         body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height:18.h ),
-              Padding(
-                padding: const EdgeInsets.only(left: 18),
-                child: Row(
-                  children: [
-                    Text('Contact Details',
-                    style:TextStyle(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 18.h),
+                Padding(
+                  padding: const EdgeInsets.only(left: 18),
+                  child: Text(
+                    'Contact Details',
+                    style: TextStyle(
                       color: Colors.black,
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w500,
-                    )
                     ),
-                    
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 10.h,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Container(
-                  width: double.infinity,
-                  height: 140.h,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 2,
-                        blurRadius: 8,
-                        offset: Offset(0,4),
-                      )
-                    ]
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [ 
-                        TextField(
-                                  controller: _nameController,
-                                  decoration: InputDecoration(
-                                          hintText: 'Name',
-                                          prefixIcon: Icon(
-                                          Icons.man_2_outlined,
-                                          color: Colors.black,
-                                        ),
-                                          filled: true,
-                                          fillColor: Colors.grey[200],
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 16,
-                                        horizontal: 16
-                                      )
-                                        ),
-                                      ),
-                          SizedBox(
-                            height: 10.h,
-                          ),
-                          TextField(
-                                        controller: _mobileController,
-                                        decoration: InputDecoration(
-                                          hintText: 'Mobile No.',
-                                          prefixIcon: Icon(
-                                          Icons.mobile_friendly,
-                                          color: Colors.black,
-                                        ),
-                                          filled: true,
-                                          fillColor: Colors.grey[200],
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 16,
-                                        horizontal: 16
-                                      )
-                                        ),
-                                      ),
-
+                ),
+                SizedBox(height: 10.h),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Container(
+                    width: double.infinity,
+                    height: 140.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        )
                       ],
                     ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _nameController,
+                            validator: (value) =>
+                                value!.isEmpty ? "Please enter your name" : null,
+                            decoration: _inputDecoration("Name", Icons.man_2_outlined),
+                          ),
+                          SizedBox(height: 10.h),
+                          TextFormField(
+                            controller: _mobileController,
+                            keyboardType: TextInputType.phone,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Please enter mobile number";
+                              } else if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
+                                return "Enter a valid 10-digit number";
+                              }
+                              return null;
+                            },
+                            decoration: _inputDecoration("Mobile No.", Icons.mobile_friendly),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                ),
-                 SizedBox(height:18.h ),
-              Padding(
-                padding: const EdgeInsets.only(left: 18),
-                child: Row(
-                  children: [
-                    Text('Address',
-                    style:TextStyle(
+                SizedBox(height: 18.h),
+                Padding(
+                  padding: const EdgeInsets.only(left: 18),
+                  child: Text(
+                    'Address',
+                    style: TextStyle(
                       color: Colors.black,
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w500,
-                    )
                     ),
-                   
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 10.h,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 2,
-                        blurRadius: 8,
-                        offset: Offset(0,4),
-                      )
-                    ]
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [ 
-                        TextField(      
-                          controller: _pincodeController,
-                                        decoration: InputDecoration(
-                                          hintText: 'Pincode',
-                                          prefixIcon: Icon(
-                                          Icons.pin_drop,
-                                          color: Colors.black,
-                                        ),
-                                          filled: true,
-                                          fillColor: Colors.grey[200],
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 16,
-                                        horizontal: 16
-                                      )
-                                        ),
-                                      ),
-                          SizedBox(
-                            height: 10.h,
-                          ),
-                          TextField(    
-                                        controller: _housenameController,
-                                        decoration: InputDecoration(
-                                          hintText: 'Address(House No.,Building,Street,Area)',
-                                          prefixIcon: Icon(
-                                          Icons.home,
-                                          color: Colors.black,
-                                        ),
-                                          filled: true,
-                                          fillColor: Colors.grey[200],
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 16,
-                                        horizontal: 16
-                                      )
-                                        ),
-                                      ),
-
-                                      SizedBox(
-                            height: 10.h,
-                          ),
-                          TextField(    
-                                        controller: _localityController,
-                                        decoration: InputDecoration(
-                                          hintText: 'Locality/Town',
-                                          prefixIcon: Icon(
-                                          Icons.location_city,
-                                          color: Colors.black,
-                                        ),
-                                          filled: true,
-                                          fillColor: Colors.grey[200],
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 16,
-                                        horizontal: 16
-                                      )
-                                        ),
-                                      ),
-                                        SizedBox(
-                            height: 10.h,
-                          ),
-                          TextField(    
-                                        controller: _districtController,
-                                        decoration: InputDecoration(
-                                          hintText: 'District',
-                                          prefixIcon: Icon(
-                                          Icons.map,
-                                          color: Colors.black,
-                                        ),
-                                          filled: true,
-                                          fillColor: Colors.grey[200],
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 16,
-                                        horizontal: 16
-                                      )
-                                        ),
-                                      ),
-                                        SizedBox(
-                            height: 10.h,
-                          ),
-                          TextField(
-                                        controller: _stateController,
-                                        decoration: InputDecoration(
-                                          hintText: 'State',
-                                          prefixIcon: Icon(
-                                          Icons.flag,
-                                          color: Colors.black,
-                                        ),
-                                          filled: true,
-                                          fillColor: Colors.grey[200],
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 16,
-                                        horizontal: 16
-                                      )
-                                        ),
-                                      ),
-
+                ),
+                SizedBox(height: 10.h),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        )
                       ],
                     ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _pincodeController,
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Please enter pincode";
+                              } else if (!RegExp(r'^\d{6}$').hasMatch(value)) {
+                                return "Enter a valid 6-digit pincode";
+                              }
+                              return null;
+                            },
+                            decoration: _inputDecoration("Pincode", Icons.pin_drop),
+                          ),
+                          SizedBox(height: 10.h),
+                          TextFormField(
+                            controller: _housenameController,
+                            validator: (value) => value!.isEmpty
+                                ? "Please enter house/area/street details"
+                                : null,
+                            decoration: _inputDecoration("Address(House No.,Building,Street,Area)", Icons.home),
+                          ),
+                          SizedBox(height: 10.h),
+                          TextFormField(
+                            controller: _localityController,
+                            validator: (value) =>
+                                value!.isEmpty ? "Please enter locality/town" : null,
+                            decoration: _inputDecoration("Locality/Town", Icons.location_city),
+                          ),
+                          SizedBox(height: 10.h),
+                          TextFormField(
+                            controller: _districtController,
+                            validator: (value) =>
+                                value!.isEmpty ? "Please enter district" : null,
+                            decoration: _inputDecoration("District", Icons.map),
+                          ),
+                          SizedBox(height: 10.h),
+                          TextFormField(
+                            controller: _stateController,
+                            validator: (value) =>
+                                value!.isEmpty ? "Please enter state" : null,
+                            decoration: _inputDecoration("State", Icons.flag),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                )
-
-            ],
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint, IconData icon) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(icon, color: Colors.black),
+      filled: true,
+      fillColor: Colors.grey[200],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
     );
   }
 }

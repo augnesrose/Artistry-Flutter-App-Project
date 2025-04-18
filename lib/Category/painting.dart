@@ -177,7 +177,7 @@ class _PaintingsState extends State<Paintings> {
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
-                    color: isAvailable ?Colors.black: Colors.grey[800],
+                    color: isAvailable ?const Color.fromARGB(255, 234, 4, 4): Colors.grey[800],
                   ),
                 ),
               ],

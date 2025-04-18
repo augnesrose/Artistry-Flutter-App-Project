@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:artistry_app/Category/painting.dart';
 
 class Product1 extends StatefulWidget {
   final String productId;
@@ -84,7 +85,7 @@ class _Product1State extends State<Product1> {
       if (response.statusCode == 200) {
       fetchCart();
       print("Product added to cart successfully");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Added to cart")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Added to cart"),duration:Duration(seconds: 1)));
      
     } else {
       print("Error: ${response.body}");
@@ -226,259 +227,264 @@ Future<void> removeFromWishlist(String productId) async {
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context);
-    return SafeArea(
-      child: Scaffold(
-        body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : product == null
-              ? Center(child: Text('Product Not Found'))
-              :SingleChildScrollView(
-          child: Column(
-            children: [
-              Stack(
-                children: [
-                  // Product image
-                  Container(
-                    child: Image.network(
-                      product?['productImage'] != null
-                              ? 'http://192.168.67.52:3000/uploads/${product?['productImage']}'
-                              : 'http://default_image_url_here.jpg',
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  // Wishlist button positioned at the top right of the image
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.7),
-                        shape: BoxShape.circle,
+    return WillPopScope(
+      onWillPop: () async{
+        return true;
+      },
+      child: SafeArea(
+        child: Scaffold(
+          body: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : product == null
+                ? Center(child: Text('Product Not Found'))
+                :SingleChildScrollView(
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    // Product image
+                    Container(
+                      child: Image.network(
+                        product?['productImage'] != null
+                                ? 'http://192.168.67.52:3000/uploads/${product?['productImage']}'
+                                : 'http://default_image_url_here.jpg',
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                       ),
-                      child: IconButton(
-                        icon: Icon(
-                          isInWishlist ? Icons.favorite : Icons.favorite_border,
-                          color: isInWishlist ? Colors.red : Colors.black,
-                          size: 30,
+                    ),
+                    // Wishlist button positioned at the top right of the image
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.7),
+                          shape: BoxShape.circle,
                         ),
-                        // Update your IconButton's onPressed callback like this
-onPressed: () {
-  if (product != null) {
-    // Store original state
-    bool wasInWishlist = isInWishlist;
-    
-    // Update UI immediately
-    setState(() {
-      isInWishlist = !isInWishlist;
-    });
-    
-    // Call the appropriate API function
-    if (isInWishlist) {
-      // Adding to wishlist
-      addToWishlist(product!['_id']).then((_) {
-        // Success already handled in UI update
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Added to wishlist'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }).catchError((error) {
-        // Revert on error
-        setState(() {
-          isInWishlist = wasInWishlist;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add to wishlist'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+                        child: IconButton(
+                          icon: Icon(
+                            isInWishlist ? Icons.favorite : Icons.favorite_border,
+                            color: isInWishlist ? Colors.red : Colors.black,
+                            size: 30,
+                          ),
+                          // Update your IconButton's onPressed callback like this
+      onPressed: () {
+        if (product != null) {
+      // Store original state
+      bool wasInWishlist = isInWishlist;
+      
+      // Update UI immediately
+      setState(() {
+        isInWishlist = !isInWishlist;
       });
-    } else {
-      // Removing from wishlist
-      removeFromWishlist(product!['_id']).then((_) {
-        // Success already handled in UI update
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Removed from wishlist'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }).catchError((error) {
-        // Revert on error
-        setState(() {
-          isInWishlist = wasInWishlist;
+      
+      // Call the appropriate API function
+      if (isInWishlist) {
+        // Adding to wishlist
+        addToWishlist(product!['_id']).then((_) {
+          // Success already handled in UI update
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Added to wishlist'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }).catchError((error) {
+          // Revert on error
+          setState(() {
+            isInWishlist = wasInWishlist;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to add to wishlist'),
+              duration: Duration(seconds: 2),
+            ),
+          );
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to remove from wishlist'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      });
-    }
-  }
-},
-                        
+      } else {
+        // Removing from wishlist
+        removeFromWishlist(product!['_id']).then((_) {
+          // Success already handled in UI update
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Removed from wishlist'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }).catchError((error) {
+          // Revert on error
+          setState(() {
+            isInWishlist = wasInWishlist;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to remove from wishlist'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        });
+      }
+        }
+      },
+                          
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20.h),
-              Padding(
-                padding: EdgeInsets.only(left: 16),
-                child: Text(
-                  '${product?['name'] ?? 'Unknown Product'}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-              ),
-              SizedBox(height: 10.h),
-              Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Text(
-                  '${product?['artistName'] ?? 'N/A'}',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-              SizedBox(height: 20.h),
-              Text(
-                'About the Painting',
-                style: TextStyle(
-                  fontSize: 25.sp,
-                  fontFamily: 'PlayFair',
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-              SizedBox(height: 10.h),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Text(
-                  '${product?['productDescription'] ?? 'N/A'}',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-              SizedBox(height: 20.h),
-              Text(
-                'About the Artist',
-                style: TextStyle(
-                  fontSize: 25.sp,
-                  fontFamily: 'PlayFair',
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-              SizedBox(height: 10.h),
-              Center(
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage: NetworkImage(
-                                  'http://192.168.67.52:3000/uploads/${product?['artistImage'] ?? 'default_artist_image.jpg'}',
-                                ),
-                ),
-              ),
-              SizedBox(height: 10.h),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Text(
-                  '${product?['artistDescription'] ?? 'N/A'}',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-              SizedBox(height: 20.h),
-              Text(
-                'Description',
-                style: TextStyle(
-                  fontSize: 25.sp,
-                  fontFamily: 'PlayFair',
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-              SizedBox(height: 10.h),
-              Padding(
-                padding: EdgeInsets.only(left: 16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Material: ${product?['material'] ?? 'N/A'}', 
-                         style: TextStyle(fontSize: 16.sp)),
-                    Text('Medium: ${product?['medium'] ?? 'N/A'}', 
-                         style: TextStyle(fontSize: 16.sp)),
-                    Text('Height:  ${product?['height'] ?? 'N/A '} inches', 
-                         style: TextStyle(fontSize: 16.sp)),
-                    Text('Width: ${product?['width'] ?? 'N/A '} inches', 
-                         style: TextStyle(fontSize: 16.sp)),
-                  ]
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  children: [
-                    Text('Shipping Fee :',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: const Color.fromARGB(215, 227, 9, 9)),),
-                    SizedBox(width:10.w),
-                    Text('\u20B9${product?['price'] ?? 'N/A'}',style: TextStyle(fontSize: 18),)
                   ],
                 ),
-              ),
-              
-              SizedBox(height: 30.h),
-            ],
+                SizedBox(height: 20.h),
+                Padding(
+                  padding: EdgeInsets.only(left: 16),
+                  child: Text(
+                    '${product?['name'] ?? 'Unknown Product'}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Text(
+                    '${product?['artistName'] ?? 'N/A'}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Text(
+                  'About the Painting',
+                  style: TextStyle(
+                    fontSize: 25.sp,
+                    fontFamily: 'PlayFair',
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Text(
+                    '${product?['productDescription'] ?? 'N/A'}',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Text(
+                  'About the Artist',
+                  style: TextStyle(
+                    fontSize: 25.sp,
+                    fontFamily: 'PlayFair',
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Center(
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundImage: NetworkImage(
+                                    'http://192.168.67.52:3000/uploads/${product?['artistImage'] ?? 'default_artist_image.jpg'}',
+                                  ),
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Text(
+                    '${product?['artistDescription'] ?? 'N/A'}',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Text(
+                  'Description',
+                  style: TextStyle(
+                    fontSize: 25.sp,
+                    fontFamily: 'PlayFair',
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Padding(
+                  padding: EdgeInsets.only(left: 16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Material: ${product?['material'] ?? 'N/A'}', 
+                           style: TextStyle(fontSize: 16.sp)),
+                      Text('Medium: ${product?['medium'] ?? 'N/A'}', 
+                           style: TextStyle(fontSize: 16.sp)),
+                      Text('Height:  ${product?['height'] ?? 'N/A '} inches', 
+                           style: TextStyle(fontSize: 16.sp)),
+                      Text('Width: ${product?['width'] ?? 'N/A '} inches', 
+                           style: TextStyle(fontSize: 16.sp)),
+                    ]
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      Text('Shipping Fee :',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: const Color.fromARGB(215, 227, 9, 9)),),
+                      SizedBox(width:10.w),
+                      Text('\u20B9${product?['shippingFee'] ?? 'N/A'}',style: TextStyle(fontSize: 18),)
+                    ],
+                  ),
+                ),
+                
+                SizedBox(height: 30.h),
+              ],
+            ),
           ),
-        ),
-        bottomNavigationBar: BottomAppBar(
-          color: Colors.black,
-          elevation: 10,
-          
-          child: Row(
-            children: [
-              SizedBox(width: 10.w),
-              Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Text(
-                  '\u20B9${product?['price'] ?? 'N/A'}',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 40.sp,
-                    fontWeight: FontWeight.w400,
-                    fontFamily: 'PlayFair'
+          bottomNavigationBar: BottomAppBar(
+            color: Colors.black,
+            elevation: 10,
+            
+            child: Row(
+              children: [
+                SizedBox(width: 10.w),
+                Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Text(
+                    '\u20B9${product?['price'] ?? 'N/A'}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 40.sp,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: 'PlayFair'
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: 20.w),
-              ElevatedButton.icon(
-                onPressed: () {
-                  addtocart(product?['_id']);
-                  fetchCart();
-                 Navigator.push(context, MaterialPageRoute(builder: (context) => Home(initialIndex: 3)));
-                  
-                }, 
-                icon: Icon(Icons.shopping_cart_rounded), 
-                label: Text(
-                  'Add to Cart',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600
+                SizedBox(width: 20.w),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    await addtocart(product?['_id']);
+                    await fetchCart();
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => Home(initialIndex: 3)));
+                    
+                  }, 
+                  icon: Icon(Icons.shopping_cart_rounded), 
+                  label: Text(
+                    'Add to Cart',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20)
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20)
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

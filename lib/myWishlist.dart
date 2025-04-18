@@ -219,7 +219,7 @@ class _MywishlistState extends State<Mywishlist> {
                                                       wishlistDetails.removeAt(index);
                                                     });
                                                     ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(content: Text('Removed from wishlist')),
+                                                      SnackBar(content: Text('Removed from wishlist'),duration:Duration(seconds: 1)),
                                                     );
                                                   }
                                                 },
