@@ -91,6 +91,33 @@ class _AddToCartState extends State<AddToCart> {
     }
   }
 
+  Future<void> deleteAddress() async{
+    SharedPreferences pref = await SharedPreferences.getInstance();
+    String ? token = pref.getString('token');
+
+    if(token == null){
+      print("Token not found");
+    }
+    try{
+
+      final url = Uri.parse("http://192.168.67.52:3000/checkout/deleteAddress");
+      final header = {
+        "Authorization":"Bearer $token",
+        "Content-Type":"application/json",
+      };
+      final response = await http.delete(url,headers:header);
+      final data=json.decode(response.body);
+
+      if(response.statusCode==200){
+        print("${data['message']}");
+      }
+    }
+    catch(e){
+      print("Error Occured : $e");
+    }
+
+
+  }
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context);
@@ -244,8 +271,9 @@ class _AddToCartState extends State<AddToCart> {
                 child: Padding(
                   padding: EdgeInsets.all(16.w),
                   child: TextButton(
-                    onPressed: () {
-                      Navigator.push(context,
+                    onPressed: () async{
+                      await deleteAddress();
+                      await Navigator.push(context,
                           MaterialPageRoute(builder: (context) => PlaceOrder()));
                     },
                     style: TextButton.styleFrom(

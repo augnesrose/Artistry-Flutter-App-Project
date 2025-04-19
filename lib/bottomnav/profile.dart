@@ -211,9 +211,7 @@ class _ProfileState extends State<Profile> {
                           ),
                           ),
                           trailing: Icon(Icons.arrow_forward_ios),
-                          onTap: () {
-                             Navigator.push(context, MaterialPageRoute(builder: (context) =>  Login()),);
-                          },
+                          onTap: () => _accountRemovalConfirmation(context),
                         ),
                         Divider(),
                        ListTile(
@@ -306,6 +304,36 @@ class _ProfileState extends State<Profile> {
             );
           },
           child: Text('Logout'),
+        ),
+      ],
+    ),
+  );
+}
+
+void _accountRemovalConfirmation(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Delete Account'),
+      content: Text('Are you sure you want to delete account?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(), // Cancel
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            // Remove token
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.remove('token');
+            Navigator.of(context).pop(); // Close dialog
+            // Navigate to Login and remove all previous routes
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => Login()),
+              (route) => false,
+            );
+          },
+          child: Text('Delete'),
         ),
       ],
     ),
